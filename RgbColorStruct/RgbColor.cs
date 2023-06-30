@@ -1,13 +1,16 @@
 ﻿using System.Globalization;
+using System.Text.RegularExpressions;
 
 namespace RgbConverter
 {
     /// <summary>
     /// Represents a color in the RGB color model.
     /// </summary>
-    // TODO Add a struct declaration.
+    public struct RgbColor : IEquatable<RgbColor>
     {
-        // TODO Add fields.
+        private readonly byte red;
+        private readonly byte green;
+        private readonly byte blue;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="RgbColor"/> struct with the specified <paramref name="red"/>, <paramref name="green"/> and <paramref name="blue"/> primary colors.
@@ -15,22 +18,27 @@ namespace RgbConverter
         /// <param name="red">A red primary color.</param>
         /// <param name="green">A green primary color.</param>
         /// <param name="blue">A blue primary color.</param>
-        // TODO Add a constructor.
+        public RgbColor(byte red, byte green, byte blue)
+        {
+            this.red = red;
+            this.green = green;
+            this.blue = blue;
+        }
 
         /// <summary>
         /// Gets a red primary color.
         /// </summary>
-        // TODO Add a property.
+        public byte Red => this.red;
 
         /// <summary>
         /// Gets a green primary color.
         /// </summary>
-        // TODO Add a property.
+        public byte Green => this.green;
 
         /// <summary>
         /// Gets a blue primary color.
         /// </summary>
-        // TODO Add a property.
+        public byte Blue => this.blue;
 
         /// <summary>
         /// Compares the <paramref name="left"/> and <paramref name="right"/> objects. Returns true if the left <see cref="RgbColor"/> is equal to the right <see cref="RgbColor"/>; otherwise, false.
@@ -38,7 +46,10 @@ namespace RgbConverter
         /// <param name="left">A left <see cref="RgbColor"/>.</param>
         /// <param name="right">A right <see cref="RgbColor"/>.</param>
         /// <returns>true if the left <see cref="RgbColor"/> is equal to the right <see cref="RgbColor"/>; otherwise, false.</returns>
-        // TODO Declare an operator.
+        public static bool operator ==(RgbColor left, RgbColor right)
+        {
+            return left.Equals(right);
+        }
 
         /// <summary>
         /// Compares the <paramref name="left"/> and <paramref name="right"/> objects. Returns true if the left <see cref="RgbColor"/> is not equal to the right <see cref="RgbColor"/>; otherwise, false.
@@ -46,14 +57,25 @@ namespace RgbConverter
         /// <param name="left">A left <see cref="RgbColor"/>.</param>
         /// <param name="right">A right <see cref="RgbColor"/>.</param>
         /// <returns>true if the left <see cref="RgbColor"/> is not equal to the right <see cref="RgbColor"/>; otherwise, false.</returns>
-        // TODO Declare an operator.
+        public static bool operator !=(RgbColor left, RgbColor right)
+        {
+            return !(left == right);
+        }
 
         /// <summary>
         /// Converts the string representation of a color to its <see cref="RgbColor"/> equivalent.
         /// </summary>
         /// <param name="rgbString">A string containing a color to convert.</param>
         /// <returns>A <see cref="RgbColor"/> equivalent to the color contained in <paramref name="rgbString"/>.</returns>
-        // TODO Add method.
+        public static RgbColor Parse(string rgbString)
+        {
+            if (TryParse(rgbString, out RgbColor result))
+            {
+                return result;
+            }
+
+            throw new ArgumentException("Invalid RGB string format.", nameof(rgbString));
+        }
 
         /// <summary>
         /// Converts the string representation of a color to its <see cref="RgbColor"/> equivalent. A return value indicates whether the operation succeeded.
@@ -61,7 +83,32 @@ namespace RgbConverter
         /// <param name="rgbString">A string containing a color to convert.</param>
         /// <param name="rgbColor">A <see cref="RgbColor"/> equivalent to the color contained in <paramref name="rgbString"/>.</param>
         /// <returns>true if <paramref name="rgbString"/> was converted successfully; otherwise, false.</returns>
-        // TODO Add method.
+        public static bool TryParse(string rgbString, out RgbColor rgbColor)
+        {
+            Regex hexPattern = new Regex(@"^[0-9A-Fa-f]{6}$");
+
+            if (string.IsNullOrEmpty(rgbString) || !hexPattern.IsMatch(rgbString))
+            {
+                rgbColor = default;
+                return false;
+            }
+
+            try
+            {
+#pragma warning disable CA1305 // Specify IFormatProvider
+                byte r = byte.Parse(rgbString.Substring(0, 2), NumberStyles.HexNumber);
+                byte g = byte.Parse(rgbString.Substring(2, 2), NumberStyles.HexNumber);
+                byte b = byte.Parse(rgbString.Substring(4, 2), NumberStyles.HexNumber);
+
+                rgbColor = new RgbColor(r, g, b);
+                return true;
+            }
+            catch (FormatException)
+            {
+                rgbColor = default;
+                return false;
+            }
+        }
 
         /// <summary>
         /// Creates a new instance of the <see cref="RgbColor"/> struct with specified <paramref name="red"/>, <paramref name="green"/> and <paramref name="blue"/> primary colors.
@@ -70,7 +117,10 @@ namespace RgbConverter
         /// <param name="green">A green primary color.</param>
         /// <param name="blue">A blue primary color.</param>
         /// <returns>A <see cref="RgbColor"/> that is initializes with specified <paramref name="red"/>, <paramref name="green"/> and <paramref name="blue"/> primary colors.</returns>
-        // TODO Add method.
+        public static RgbColor Create(byte red, byte green, byte blue)
+        {
+            return new RgbColor(red, green, blue);
+        }
 
         /// <summary>
         /// Creates a new instance of the <see cref="RgbColor"/> struct with specified <paramref name="red"/>, <paramref name="green"/> and <paramref name="blue"/> primary colors.
@@ -79,34 +129,59 @@ namespace RgbConverter
         /// <param name="green">A green primary color.</param>
         /// <param name="blue">A blue primary color.</param>
         /// <returns>A <see cref="RgbColor"/> that is initializes with specified <paramref name="red"/>, <paramref name="green"/> and <paramref name="blue"/> primary colors.</returns>
-        // TODO Add method.
+        public static RgbColor Create(long red, long green, long blue)
+        {
+            ThrowExceptionIfValueIsNotValid(red, nameof(red));
+            ThrowExceptionIfValueIsNotValid(green, nameof(green));
+            ThrowExceptionIfValueIsNotValid(blue, nameof(blue));
+
+            return new RgbColor((byte)red, (byte)green, (byte)blue);
+        }
 
         /// <summary>
         /// Determines whether the specified <see cref="RgbColor"/> is equal to the current <see cref="RgbColor"/>.
         /// </summary>
         /// <param name="other">The <see cref="RgbColor"/> to compare with the current <see cref="RgbColor"/>.</param>
         /// <returns>true if the specified <see cref="RgbColor"/> is equal to the current <see cref="RgbColor"/>; otherwise, false.</returns>
-        // TODO Add method.
+        public bool Equals(RgbColor other)
+        {
+            return this.Red == other.Red && this.Green == other.Green && this.Blue == other.Blue;
+        }
 
         /// <summary>
         /// Determines whether the specified <see cref="RgbColor"/> is equal to the current <see cref="RgbColor"/>.
         /// </summary>
         /// <param name="obj">The object to compare with the current <see cref="RgbColor"/>.</param>
         /// <returns>true if the specified <see cref="RgbColor"/> is equal to the current <see cref="RgbColor"/>; otherwise, false.</returns>
-        // TODO Add method.
+        public override bool Equals(object? obj)
+        {
+            return obj is RgbColor other && this.Equals(other);
+        }
 
         /// <summary>
         /// Returns a string that represents the current <see cref="RgbColor"/>.
         /// </summary>
         /// <returns>A string that represents the current <see cref="RgbColor"/>.</returns>
-        // TODO Add method.
+        public override string ToString()
+        {
+            return $"{this.Red:X2}{this.Green:X2}{this.Blue:X2}";
+        }
 
         /// <summary>
         /// Gets a hash code of the current <see cref="RgbColor"/>.
         /// </summary>
         /// <returns>A hash code of the current <see cref="RgbColor"/>.</returns>
-        // TODO Add method.
+        public override int GetHashCode()
+        {
+            return (this.Blue << 16) | (this.Green << 8) | this.Red;
+        }
 
-        // TODO Add method.
+        private static void ThrowExceptionIfValueIsNotValid(long value, string colorName)
+        {
+            if (value < 0 || value > byte.MaxValue)
+            {
+                throw new ArgumentException($"Invalid value for the {colorName} component. It must be between 0 and {byte.MaxValue}.", colorName);
+            }
+        }
     }
 }
